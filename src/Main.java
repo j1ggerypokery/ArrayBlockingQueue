@@ -1,6 +1,7 @@
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
     public static BlockingQueue<String> queueA = new ArrayBlockingQueue<>(100);
@@ -11,6 +12,7 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
         texting = new Thread(() -> {
+
             for (int i = 0; i < 10; i++) {
                 String texts = generateText("abc", 20);
                 try {
@@ -31,9 +33,9 @@ public class Main {
         } catch (InterruptedException e) {
             throw new RuntimeException();
         }
-        Thread a = textGet(queueA, 'a');
-        Thread b = textGet(queueB, 'b');
-        Thread c = textGet(queueC, 'c');
+        Thread a = textGet(queueA, 'a', texting.getName());
+        Thread b = textGet(queueB, 'b', texting.getName());
+        Thread c = textGet(queueC, 'c', texting.getName());
         a.start();
         b.start();
         c.start();
@@ -51,12 +53,12 @@ public class Main {
         return text.toString();
     }
 
-    public static Thread textGet(BlockingQueue<String> queue, char letter) {
+    public static Thread textGet(BlockingQueue<String> queue, char letter, String texts) {
 
         return new Thread(() -> {
 
             try {
-                int max = max(queue, letter);
+                int max = max(queue, letter, texts);
                 System.out.println("Наибольшее число " + letter + " - " + max);
             } catch (InterruptedException e) {
             }
@@ -65,13 +67,13 @@ public class Main {
 
     }
 
-    public static int max(BlockingQueue<String> queue, char letter) throws InterruptedException {
+    public static int max(BlockingQueue<String> queue, char letter, String texts) throws InterruptedException {
         int max = 0;
         int count = 0;
-        String text;
+     //   String texts;
         while (texting.isAlive()) {
-            text = queue.take();
-            for (char abc : text.toCharArray()) {
+            texts = queue.take();
+            for (char abc : texts.toCharArray()) {
                 if (abc == letter) count++;
             }
             if (count > max)
