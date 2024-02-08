@@ -1,7 +1,6 @@
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
     public static BlockingQueue<String> queueA = new ArrayBlockingQueue<>(100);
@@ -13,29 +12,23 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         texting = new Thread(() -> {
 
-            for (int i = 0; i < 10; i++) {
-                String texts = generateText("abc", 20);
+            for (int i = 0; i < 10_000; i++) {
+                String text = generateText("abc", 100_000);
                 try {
-                    queueA.put(texts);
-                    queueB.put(texts);
-                    queueC.put(texts);
+                    queueA.put(text);
+                    queueB.put(text);
+                    queueC.put(text);
                 } catch (InterruptedException e) {
                     throw new RuntimeException();
                 }
-
-                System.out.println(texts);
             }
         });
 
         texting.start();
-        try {
-            texting.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException();
-        }
-        Thread a = textGet(queueA, 'a', texting.getName());
-        Thread b = textGet(queueB, 'b', texting.getName());
-        Thread c = textGet(queueC, 'c', texting.getName());
+
+        Thread a = textGet(queueA, 'a');
+        Thread b = textGet(queueB, 'b');
+        Thread c = textGet(queueC, 'c');
         a.start();
         b.start();
         c.start();
@@ -53,33 +46,34 @@ public class Main {
         return text.toString();
     }
 
-    public static Thread textGet(BlockingQueue<String> queue, char letter, String texts) {
+    public static Thread textGet(BlockingQueue<String> queue, char letter) {
 
         return new Thread(() -> {
 
             try {
-                int max = max(queue, letter, texts);
+                int max = max(queue, letter);
                 System.out.println("Наибольшее число " + letter + " - " + max);
             } catch (InterruptedException e) {
-            }
+          }
 
         });
 
     }
 
-    public static int max(BlockingQueue<String> queue, char letter, String texts) throws InterruptedException {
+    public static int max(BlockingQueue<String> queue, char letter) throws InterruptedException {
         int max = 0;
         int count = 0;
-     //   String texts;
-        while (texting.isAlive()) {
-            texts = queue.take();
-            for (char abc : texts.toCharArray()) {
-                if (abc == letter) count++;
+     String texts;
+            while (texting.isAlive()) {
+                texts = queue.take();
+                for (char abc : texts.toCharArray()) {
+                    if (abc == letter) count++;
+                }
+                if (count > max) {
+                    max = count;
+                    count = 0;
+                }
             }
-            if (count > max)
-                max = count;
-            count = 0;
-        }
         return max;
     }
 
